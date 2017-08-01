@@ -1,0 +1,129 @@
+---
+title: "EDA"
+output: html_document
+---
+
+
+```{r}
+library(data.table); library(ggplot2); library(dplyr)
+data = fread('C:/Users/Megan/Documents/Duke/Thesis/Modeling/one_row_shots.csv')
+shots = as.data.frame(na.omit(data))
+
+#removing first two columns
+drop_cols = which(names(shots) %in% c('V1', 'Unnamed: 0', 'shot_num', 'catch_and_release', 'catch_and_shoot'))
+shots = data.frame(shots[, -drop_cols])
+
+drop = which(shots$shooter_dist_to_ball >= 6.5)
+fin = shots[-drop, ]
+
+#keeping only shooters who take at least thirty shots
+shooter_tots = as.data.frame(table(shots$shooter))
+#ggplot(shooter_tots, aes(x=Freq)) + geom_histogram()
+enough_shots = shooter_tots[which(shooter_tots$Freq >= 30), 'Var1']
+fin_data = filter(fin, shooter %in% enough_shots)
+
+#writing the data
+write.csv(fin_data, 'C:/Users/Megan/Documents/Duke/Thesis/Modeling/shot_model_data.csv')
+```
+
+
+```{r}
+#data distributions
+ggplot(fin_data, aes(x=game_clock/100)) + geom_density(fill='red', alpha=0.5) + labs(x="Game Clock (seconds)", y="Density") + theme(plot.title = element_text( color="#666666", face="bold", size=12, hjust=0.5)) + theme(axis.title = element_text(color="#666666", face="bold"))
+ggsave('C:/Users/Megan/Documents/Duke/Thesis/Drafts/Images/game_clock.pdf', plot=last_plot())
+
+ggplot(fin_data, aes(x=shot_clock)) + geom_density(fill='red', alpha=0.5) + labs(x="Shot Clock (seconds)", y="Density") + theme(plot.title = element_text( color="#666666", face="bold", size=12, hjust=0.5)) + theme(axis.title = element_text(color="#666666", face="bold"))
+ggsave('C:/Users/Megan/Documents/Duke/Thesis/Drafts/Images/shot_clock.pdf', plot=last_plot())
+
+ggplot(fin_data, aes(x=as.factor(quarter))) + geom_bar(fill='red', alpha=0.5) + labs(x="Quarter", y="Count") + theme(plot.title = element_text( color="#666666", face="bold", size=12, hjust=0.5)) + theme(axis.title = element_text(color="#666666", face="bold"))
+ggsave('C:/Users/Megan/Documents/Duke/Thesis/Drafts/Images/quarter.pdf', plot=last_plot())
+
+ggplot(fin_data, aes(x=as.factor(shot_val))) + geom_bar(fill='red', alpha=0.5) + labs(x="Shot Value", y="Count") + theme(plot.title = element_text( color="#666666", face="bold", size=12, hjust=0.5)) + theme(axis.title = element_text(color="#666666", face="bold"))
+ggsave('C:/Users/Megan/Documents/Duke/Thesis/Drafts/Images/shot_value.pdf', plot=last_plot())
+
+ggplot(fin_data, aes(x=other_shot)) + geom_bar(fill='red', alpha=0.5) + labs(x="Other Shot", y="Count") + theme(plot.title = element_text( color="#666666", face="bold", size=12, hjust=0.5)) + theme(axis.title = element_text(color="#666666", face="bold"))
+ggsave('C:/Users/Megan/Documents/Duke/Thesis/Drafts/Images/other_shot.pdf', plot=last_plot())
+
+
+ggplot(fin_data, aes(x=as.factor(num_poss))) + geom_bar(fill='red', alpha=0.5) + labs(x="Number of Posessions", y="Count") + theme(plot.title = element_text( color="#666666", face="bold", size=12, hjust=0.5)) + theme(axis.title = element_text(color="#666666", face="bold"))
+ggsave('C:/Users/Megan/Documents/Duke/Thesis/Drafts/Images/other_shot.pdf', plot=last_plot())
+
+ggplot(fin_data, aes(x=made)) + geom_bar(fill='red', alpha=0.5) + labs(x="Shot Made", y="Count") + theme(plot.title = element_text( color="#666666", face="bold", size=12, hjust=0.5)) + theme(axis.title = element_text(color="#666666", face="bold"))
+ggsave('C:/Users/Megan/Documents/Duke/Thesis/Drafts/Images/made.pdf', plot=last_plot())
+
+ggplot(fin_data, aes(x=x_loc)) + geom_density(fill='red', alpha=0.5) + labs(x="X Location", y="Density") + theme(plot.title = element_text( color="#666666", face="bold", size=12, hjust=0.5)) + theme(axis.title = element_text(color="#666666", face="bold"))
+ggsave('C:/Users/Megan/Documents/Duke/Thesis/Drafts/Images/x_loc.pdf', plot=last_plot())
+
+ggplot(fin_data, aes(x=y_loc)) + geom_density(fill='red', alpha=0.5) + labs(x="Y Location", y="Density") + theme(plot.title = element_text( color="#666666", face="bold", size=12, hjust=0.5)) + theme(axis.title = element_text(color="#666666", face="bold"))
+ggsave('C:/Users/Megan/Documents/Duke/Thesis/Drafts/Images/y_loc.pdf', plot=last_plot())
+
+ggplot(shots, aes(x=court_zone)) + geom_bar(fill='red', alpha=0.5) + labs(x="Court Zone", y="Count") + theme(plot.title = element_text( color="#666666", face="bold", size=12, hjust=0.5)) + theme(axis.title = element_text(color="#666666", face="bold"))
+ggsave('C:/Users/Megan/Documents/Duke/Thesis/Drafts/Images/court_zone.pdf', plot=last_plot())
+
+ggplot(fin_data, aes(x=shooter_vel_at_shot)) + geom_density(fill='red', alpha=0.5) + labs(x="Shooter Velocity (ft/s)", y="Density") + theme(plot.title = element_text( color="#666666", face="bold", size=12, hjust=0.5)) + theme(axis.title = element_text(color="#666666", face="bold"))
+ggsave('C:/Users/Megan/Documents/Duke/Thesis/Drafts/Images/shooter_vel.pdf', plot=last_plot())
+
+ggplot(fin_data, aes(x=shooter_avg_vel)) + geom_density(fill="red", alpha=0.5) + labs(x="Average Shooter Velocity (ft/s)", y="Density") + theme(plot.title = element_text( color="#666666", face="bold", size=12, hjust=0.5)) + theme(axis.title = element_text(color="#666666", face="bold"))
+ggsave('C:/Users/Megan/Documents/Duke/Thesis/Drafts/Images/avg_shooter_vel.pdf', plot=last_plot())
+
+
+ggplot(fin_data, aes(x=shooter_dist_traveled)) + geom_density(fill='red', alpha=0.5) + labs(x="Shooter Distance Traveled", y="Density") + theme(plot.title = element_text( color="#666666", face="bold", size=12, hjust=0.5)) + theme(axis.title = element_text(color="#666666", face="bold"))
+ggsave('C:/Users/Megan/Documents/Duke/Thesis/Drafts/Images/shooter_dist_traveled.pdf', plot=last_plot())
+
+ggplot(fin_data, aes(x=closest_defender_dist)) + geom_density(fill='red', alpha=0.5) + labs(x="Closest Defender Distance", y="Density") + theme(plot.title = element_text( color="#666666", face="bold", size=12, hjust=0.5)) + theme(axis.title = element_text(color="#666666", face="bold"))
+ggsave('C:/Users/Megan/Documents/Duke/Thesis/Drafts/Images/closest_def_dist.pdf', plot=last_plot())
+
+ggplot(fin_data, aes(x=closest_defender_angle)) + geom_density(fill='red', alpha=0.5) + labs(x="Closest Defender Angle", y="Density") + theme(plot.title = element_text( color="#666666", face="bold", size=12, hjust=0.5)) + theme(axis.title = element_text(color="#666666", face="bold"))
+ggsave('C:/Users/Megan/Documents/Duke/Thesis/Drafts/Images/closest_def_angle.pdf', plot=last_plot())
+
+
+ggplot(fin_data, aes(x=closest_teammate_dist)) + geom_density(fill='red', alpha=0.5) + labs(x="Closest Teammate Distance", y="Density") + theme(plot.title = element_text( color="#666666", face="bold", size=12, hjust=0.5)) + theme(axis.title = element_text(color="#666666", face="bold"))
+ggsave('C:/Users/Megan/Documents/Duke/Thesis/Drafts/Images/closest_team_dist.pdf', plot=last_plot())
+
+
+ggplot(fin_data, aes(x=closest_teammate_angle)) + geom_density(fill='red', alpha=0.5) + labs(x="Closest Teammate Angle", y="Density") + theme(plot.title = element_text( color="#666666", face="bold", size=12, hjust=0.5)) + theme(axis.title = element_text(color="#666666", face="bold"))
+ggsave('C:/Users/Megan/Documents/Duke/Thesis/Drafts/Images/closest_team_ang.pdf', plot=last_plot())
+
+
+ggplot(fin_data, aes(x=accel_changes)) + geom_density(fill='red', alpha=0.5) + labs(x="Closest Teammate Angle", y="Density") + theme(plot.title = element_text( color="#666666", face="bold", size=12, hjust=0.5)) + theme(axis.title = element_text(color="#666666", face="bold"))
+ggsave('C:/Users/Megan/Documents/Duke/Thesis/Drafts/Images/num_accel.pdf', plot=last_plot())
+```
+
+```{r}
+plot(fin_data$new_y, fin_data$new_x, col=fin_data$made)
+lines(c(0,0), c(50,0))
+
+```
+
+
+```{r}
+library(plotrix)
+
+plot(fin_data$x_loc, fin_data$y_loc, col=as.factor(fin_data$made))
+lines(c(47,47),c(0,50), col="blue")
+lines(c(0,94),c(50,50), col="blue")
+lines(c(0,94),c(0,0), col="blue")
+lines(c(0,0),c(0,50),col="blue")
+lines(c(94,94),c(0,50), col="blue")
+#half court and circles at top of key
+draw.circle(x=47,y=25,radius=6, col="blue")
+draw.circle(x=19,y=25,radius=6, col="blue")
+draw.circle(x=75,y=25,radius=6, col="blue")
+#free throw line
+lines(c(19,31)~c(19,19), col="blue")
+lines(c(19,31)~c(75,75), col="blue")
+## Define the paint
+lines(c(31,31)~c(0,19), col="blue")
+lines(c(19,19)~c(0,19), col="blue")
+lines(c(31,31)~c(75,94), col="blue")
+lines(c(19,19)~c(75,94), col="blue")
+#three point line
+lines(c(47,47)~c(0,7), col="blue")
+lines(c(3,3)~c(0,7), col="blue")
+lines(c(47,47)~c(87,94), col="blue")
+lines(c(3,3)~c(87,94), col="blue")
+draw.arc(x=8.25,y=26,radius=25,deg1=-90,deg2=90, col="pink")
+draw.arc(x=88.75,y=25,radius=22,deg1=270,deg2=90,col="orange")
+
+```
+

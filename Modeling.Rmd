@@ -1,0 +1,146 @@
+---
+title: "Modeling"
+output: html_document
+---
+
+```{r}
+library(data.table); library(glmnet); library(dplyr)
+data = data.frame(fread('C:/Users/Megan/Documents/Duke/Thesis/Modeling/shot_model_data.csv'))
+
+#dropping some other columns
+drop_cols = which(names(data) %in% c('V1','closest_defender', 'closest_teammate', 'catch_and_shoot', 'game_date', 'shooter', 'new_x', 'new_y'))
+data = data[, -drop_cols]
+data$made = as.factor(as.numeric(data$made))
+
+```
+
+```{r}
+#getting a training and a test set
+set.seed(10)
+#scaled = scale(data_mod)
+x = model.matrix(made~., data)[,-1]
+y = as.numeric(data$made)
+
+train=sample(1:nrow(x), nrow(x)*0.65)
+test=(-train)
+y.test = y[test]
+
+
+#saving the training and test files
+test_data = cbind(data.frame(y.test), data.frame(x[test,]))
+names(test_data) = c("made", "accel_changes", "closest_def_locleft", "closest_def_locright", "closest_defender_angle", "closest_defender_dist", "closest_teammate_angle", "closest_teammate_dist", "closest_teammate_locleft", "closest_teammate_locright", "court_zone", "game_clock", "num_close_def", "num_close_team", "num_poss", "other_shot", "quarter", "shooter_avg_vel", "shooter_dist_to_ball", "shooter_dist_traveled", "shooter_team", "shooter_vel_at_shot", "shot_clock", "shot_val", "x_loc", "y_loc")
+test_data$made = as.factor(test_data$made)
+test_data$closest_def_locleft = as.factor(test_data$closest_def_locleft)
+test_data$closest_def_locright = as.factor(test_data$closest_def_locright)
+test_data$closest_teammate_locleft = as.factor(test_data$closest_teammate_locleft)
+test_data$closest_teammate_locright = as.factor(test_data$closest_teammate_locright)
+test_data$court_zone = as.factor(test_data$court_zone)
+test_data$other_shot = as.factor(test_data$other_shot)
+test_data$quarter = as.factor(test_data$quarter)
+test_data$shot_val = as.factor(test$shot_val)
+
+
+train_data = cbind(data.frame(y[train], data.frame(x[train,])))
+names(train_data) = c("made", "accel_changes", "closest_def_locleft", "closest_def_locright", "closest_defender_angle", "closest_defender_dist", "closest_teammate_angle", "closest_teammate_dist", "closest_teammate_locleft", "closest_teammate_locright", "court_zone", "game_clock", "num_close_def", "num_close_team", "num_poss", "other_shot", "quarter", "shooter_avg_vel", "shooter_dist_to_ball", "shooter_dist_traveled", "shooter_team", "shooter_vel_at_shot", "shot_clock", "shot_val", "x_loc", "y_loc")
+train_data$made = as.factor(train_data$made)
+train_data$closest_def_locleft = as.factor(train_data$closest_def_locleft)
+train_data$closest_def_locright = as.factor(train_data$closest_def_locright)
+train_data$closest_teammate_locleft = as.factor(train_data$closest_teammate_locleft)
+train_data$closest_teammate_locright = as.factor(train_data$closest_teammate_locright)
+train_data$court_zone = as.factor(train_data$court_zone)
+train_data$other_shot = as.factor(train_data$other_shot)
+train_data$quarter = as.factor(train_data$quarter)
+train_data$shot_val = as.factor(train_data$shot_val)
+
+#scaling the necessary columns
+quant_vars = c("accel_changes",  "closest_defender_angle", "closest_defender_dist", "closest_teammate_angle", "closest_teammate_dist", "game_clock", "num_close_def", "num_close_team", "num_poss", "shooter_avg_vel", "shooter_dist_to_ball", "shooter_dist_traveled", "shooter_team", "shooter_vel_at_shot", "shot_clock", "x_loc", "y_loc")
+train_data_scaled = cbind(train_data[, -(which(names(train_data) %in% quant_vars))], scale(train_data[, which(names(train_data) %in% quant_vars)]))
+test_data_scaled = cbind(test_data[, -(which(names(test_data) %in% quant_vars))], scale(test_data[, which(names(test_data) %in% quant_vars)]))
+
+#saving train/test sets
+write.csv(train_data, 'C:/Users/Megan/Documents/Duke/Thesis/Modeling/train_data.csv')
+write.csv(test_data, 'C:/Users/Megan/Documents/Duke/Thesis/Modeling/test_data.csv')
+write.csv(train_data_scaled, 'C:/Users/Megan/Documents/Duke/Thesis/Modeling/train_data_scaled.csv')
+write.csv(test_data_scaled, 'C:/Users/Megan/Documents/Duke/Thesis/Modeling/test_data_scaled.csv')
+```
+
+
+```{r}
+convert_prob <- function(val){
+  pred_list = rep(0, length(val))
+  for (k in (1:length(val))){
+    if (val[k] < 0.5){
+      pred_list[k] = 0
+    }
+    else{pred_list[k] = 1}
+  }
+  return(pred_list)
+}
+
+#Ridge Regression
+
+#using cross-validation to select lambda
+set.seed(1)
+cv.out.1 = cv.glmnet(x[train,], y[train], alpha=0, family="binomial")
+cv.out.2 = cv.glmnet(x[train,], y[train], alpha=0, family="binomial")
+cv.out.3 = cv.glmnet(x[train,], y[train], alpha=0, family="binomial")
+cv.out.4 = cv.glmnet(x[train,], y[train], alpha=0, family="binomial")
+cv.out.5 = cv.glmnet(x[train,], y[train], alpha=0, family="binomial")
+
+bestlam.1 = cv.out.1$lambda.min
+bestlam.2 = cv.out.2$lambda.min
+bestlam.3 = cv.out.3$lambda.min
+bestlam.4 = cv.out.4$lambda.min
+bestlam.5 = cv.out.5$lambda.min
+
+ridge.pred = predict(ridge.mod, s=bestlam.2,newx=x[test,], type="class")
+ridge.pred.prob = predict(ridge.mod, s=bestlam.1, newx=x[test,], type = )
+ridge.pred.df = as.data.frame(ridge.pred)
+names(ridge.pred.df) = c('prob')
+pred = convert_prob(ridge.pred)
+mean((pred-y.test)^2)
+
+#confusion matrix
+pred_df = cbind(y.test, pred)
+diff = pred_df[,1] - pred_df[,2]
+pred_df = as.data.frame(cbind(pred_df, diff))
+corr_made = nrow(pred_df[which(pred_df$y.test == 1 & pred_df$diff == 0),])
+corr_miss = nrow(pred_df[which(pred_df$y.test == 0 & pred_df$diff == 0),])
+incorr_made = nrow(pred_df[which(pred_df$y.test == 1 & abs(pred_df$diff) == 1),])
+incorr_miss = nrow(pred_df[which(pred_df$y.test == 0 & abs(pred_df$diff) == 1),])
+
+((corr_made) + (corr_miss))/(nrow(pred_df))
+```
+
+```{r}
+pred_prob = data.frame(predict(ridge.mod, s= bestlam.2, newx=x[test,], type='response'))
+names(pred_prob) = c('prob')
+#visuals
+ggplot(pred_prob, aes(x=prob)) + geom_density(fill="red", alpha=0.5) + labs(x="Probability of Make", y="Density") + theme(plot.title = element_text( color="#666666", face="bold", size=12, hjust=0.5)) + theme(axis.title = element_text(color="#666666", face="bold"))
+ggsave('C:/Users/Megan/Documents/Duke/Thesis/Drafts/Images/ridge_prob.pdf', plot=last_plot())
+
+#save this in the Pictures file
+plot(cv.out.2)
+```
+
+```{r}
+#testing the linear model code with a separable data set
+data(iris)
+test = filter(iris, Species %in% c('setosa', 'virginica'))
+x_ir = model.matrix(Species~., test)[,-1]
+y_ir = as.numeric(test$Species)
+
+train=sample(1:nrow(x), nrow(x)*0.65)
+test=(-train)
+y.test = y[test]
+
+
+
+set.seed(1)
+ridge.mod = glmnet(x_ir, y_ir, family="binomial")
+cv.out = cv.glmnet(x_ir, y_ir, alpha=0)
+bestlam = cv.out$lambda.min
+ridge.pred = predict(ridge.mod, s=bestlam, newx=x_ir, type="response")
+plot(density(ridge.pred))
+```
+
